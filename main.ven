@@ -1,0 +1,9 @@
+function main(args:string[]):int {
+    print("hello, world!");
+
+    for (let i:int = 0; i < args.length; i++) {
+        print("arg %d: %s", [i, args[i]]);
+    }
+
+    return 0;
+}
