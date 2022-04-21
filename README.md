@@ -1,1 +1,1 @@
-Parser for my experimental Venere language
+Parser for Venere, my experimental language
