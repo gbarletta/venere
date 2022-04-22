@@ -204,6 +204,8 @@ public:
         token t1 = peek(1);
         token t2 = peek(2);
 
+        std::cout << "parsing type\n";
+
         if (t0.type != TYPE) {
             return parse_result("Not a type");
         }
@@ -216,11 +218,21 @@ public:
             consume(1);
         }
 
+        std::cout << "end type\n";
         return parse_result(ast_node(INVALID_AST));
     }
 
     parse_result parse_block() {
-        parse_statement();
+        token t0;
+
+        std::cout << "parsing block\n";
+
+        while ((t0 = peek(0)).type != CLOSEBRACE) {
+            parse_statement();
+        }
+
+        std::cout << "end block\n";
+        
         return parse_result(ast_node(INVALID_AST));
     }
 
@@ -230,6 +242,8 @@ public:
 
     parse_result parse_expression() {
         token t0 = peek(0);
+
+        std::cout << "parsing expression\n";
 
         if (t0.type == LITERAL) {
             consume(1);
@@ -241,6 +255,7 @@ public:
             return parse_result(ast_node(INVALID_AST));
         }
         
+        std::cout << "end expressions\n";
         return parse_result("Invalid expression");
     }
 
@@ -248,6 +263,8 @@ public:
         token t0 = peek(0);
         token t1 = peek(1);
         token ti;
+
+        std::cout << "parsing funccall\n";
 
         if (t0.type != IDENTIFIER) {
             return parse_result("Identifier expected for function call");
@@ -278,12 +295,15 @@ public:
             return parse_result("')' expected for function call");
         }
 
+        std::cout << "end funccall\n";
         return parse_result(ast_node(INVALID_AST));
     }
 
     parse_result parse_statement() {
         token t0 = peek(0);
         token t1 = peek(1);
+
+        std::cout << "parsing statement\n";
 
         switch (t0.type) {
         case OPENBRACE:
@@ -297,8 +317,14 @@ public:
                 parse_funccall();
             }
             break;
+        case FOR:
+            std::cout << "For!\n";
+            break;
+        default:
+            break;
         }
 
+        std::cout << "end statement\n";
         return parse_result(ast_node(INVALID_AST));
     }
 
@@ -307,6 +333,8 @@ public:
         token t1 = peek(1);
         token t2 = peek(2);
         token ti;
+
+        std::cout << "parsing function\n";
 
         if (t0.type != FUNCTION) {
             return parse_result("Not a function");
@@ -356,6 +384,9 @@ public:
         consume(1);
         parse_type();
         parse_statement();
+
+        std::cout << "end function\n";
+        return parse_result(ast_node(INVALID_AST));
     }
 };
 
