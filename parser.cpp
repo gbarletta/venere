@@ -59,12 +59,23 @@ enum ast_type {
     INVALID_AST = -1,
     BLOCK,
     STATEMENT,
-    EXPRESSION
+    EXPRESSION,
+    PLUSS,
+    IDENTIFIERR,
+    MINUSS,
 };
 
 class ast_node_info {
-private:
+public:
+    std::string identifier;
 
+    ast_node_info() {
+        this->identifier = "";
+    }
+    
+    ast_node_info(std::string identifier) {
+        this->identifier = identifier;
+    }
 };
 
 class ast_node {
@@ -74,10 +85,12 @@ public:
     std::vector<ast_node> children;
 
     ast_node() {
+        this->info = ast_node_info("");
         this->type = BLOCK;
     }
     
     ast_node(ast_type type) {
+        this->info = ast_node_info("");
         this->type = type;
     }
 
@@ -88,6 +101,16 @@ public:
 
     void add_child(ast_node child) {
         this->children.push_back(child);
+    }
+
+    void print() {
+        std::cout << type << "\n";
+        if (info.identifier != "") {
+            std::cout << info.identifier << "\n";
+        }
+        for (std::size_t i = 0; i < children.size(); i++) {
+            children[i].print();
+        }
     }
 };
 
@@ -113,7 +136,7 @@ public:
 
     parser() {
         current_token = 0;
-        token_list.push_back(token(FUNCTION, "function"));
+        /*token_list.push_back(token(FUNCTION, "function"));
         token_list.push_back(token(IDENTIFIER, "main"));
         token_list.push_back(token(OPENPAREN, "("));
         token_list.push_back(token(IDENTIFIER, "args"));
@@ -121,6 +144,10 @@ public:
         token_list.push_back(token(TYPE, "string"));
         token_list.push_back(token(OPENBRACKET, "["));
         token_list.push_back(token(CLOSEBRACKET, "]"));
+        token_list.push_back(token(COMMA, ","));
+        token_list.push_back(token(IDENTIFIER, "prova"));
+        token_list.push_back(token(COLON, ":"));
+        token_list.push_back(token(TYPE, "int"));
         token_list.push_back(token(CLOSEPAREN, ")"));
         token_list.push_back(token(COLON, ":"));
         token_list.push_back(token(TYPE, "int"));
@@ -167,7 +194,49 @@ public:
         token_list.push_back(token(RETURN, "return"));
         token_list.push_back(token(NUMBER, "0"));
         token_list.push_back(token(SEMICOLON, ";"));
-        token_list.push_back(token(CLOSEBRACE, "}"));
+        token_list.push_back(token(CLOSEBRACE, "}"));*/
+        token_list.push_back(token(IDENTIFIER, "i"));
+        token_list.push_back(token(PLUS, "+"));
+        token_list.push_back(token(IDENTIFIER, "j"));
+        token_list.push_back(token(MINUS, "-"));
+        token_list.push_back(token(IDENTIFIER, "k"));
+    }
+
+    parse_result parse_expression() {
+        token t0 = peek(0);
+        token t1;
+
+        std::cout << "parsing expression\n";
+
+        if (t0.type == LITERAL) {
+            consume(1);
+            std::cout << "LiteralExpr\n";
+
+            /*if ((t0 = peek(0)).type == SEMICOLON) {
+                return parse_result(ast_node())
+            }*/
+        } else if (t0.type == IDENTIFIER) {
+            t1 = peek(1);
+
+            if (t1.type == PLUS) {
+                ast_node plus_node = ast_node(PLUSS);
+                plus_node.add_child(ast_node(IDENTIFIERR, ast_node_info(t0.content)));
+                consume(2);
+                plus_node.add_child(parse_expression().node);
+                return parse_result(plus_node);
+            } else if (t1.type == MINUS) {
+                ast_node plus_node = ast_node(MINUSS);
+                plus_node.add_child(ast_node(IDENTIFIERR, ast_node_info(t0.content)));
+                consume(2);
+                plus_node.add_child(parse_expression().node);
+                return parse_result(plus_node);
+            } else {
+                return parse_result(ast_node(IDENTIFIERR, ast_node_info(t0.content)));
+            }
+        }
+        
+        std::cout << "end expression\n";
+        return parse_result("Invalid expression");
     }
 
     bool consume(std::size_t c) {
@@ -188,13 +257,15 @@ public:
     }
 
     ast_node parse() {
-        token t;
+        /*token t;
 
         while ((t = peek(0)).type != INVALID_TOKEN) {
             if (t.type == FUNCTION) {
-                parse_function();
+                parse_funcdecl();
             }
-        }
+        }*/
+
+        parse_expression().node.print();
 
         return ast_node(INVALID_AST);
     }
@@ -240,25 +311,6 @@ public:
         return parse_result(ast_node(INVALID_AST));
     }
 
-    parse_result parse_expression() {
-        token t0 = peek(0);
-
-        std::cout << "parsing expression\n";
-
-        if (t0.type == LITERAL) {
-            consume(1);
-            std::cout << "LiteralExpr\n";
-            return parse_result(ast_node(INVALID_AST));
-        } else if (t0.type == IDENTIFIER) {
-            consume(1);
-            std::cout << "IdentifierExpr\n";
-            return parse_result(ast_node(INVALID_AST));
-        }
-        
-        std::cout << "end expressions\n";
-        return parse_result("Invalid expression");
-    }
-
     parse_result parse_funccall() {
         token t0 = peek(0);
         token t1 = peek(1);
@@ -295,7 +347,50 @@ public:
             return parse_result("')' expected for function call");
         }
 
+        consume(1);
         std::cout << "end funccall\n";
+        return parse_result(ast_node(INVALID_AST));
+    }
+
+    parse_result parse_for() { // too early :>
+        token t0 = peek(0);
+        token t1 = peek(1);
+
+        std::cout << "parsing for\n";
+
+        if (t0.type != FOR) {
+            return parse_result("'for' expected for for loop");
+        }
+
+        if (t1.type != OPENPAREN) {
+            return parse_result("'(' expected for for loop");
+        }
+
+        consume(2);
+        parse_statement(); // initialization
+
+        if ((t0 = peek(0)).type != SEMICOLON) {
+            return parse_result("';' expected for for loop");
+        }
+
+        parse_expression(); // condition
+
+        if ((t0 = peek(0)).type != SEMICOLON) {
+            return parse_result("';' expected for for loop");
+        }
+
+        parse_statement(); // iteration
+
+        if ((t0 = peek(0)).type != CLOSEPAREN) {
+            return parse_result("')' expected for for loop");
+        }
+
+        consume(1);
+        while (1);
+        parse_statement();
+
+        std::cout << "end for\n";
+        while (1);
         return parse_result(ast_node(INVALID_AST));
     }
 
@@ -318,17 +413,26 @@ public:
             }
             break;
         case FOR:
-            std::cout << "For!\n";
+            parse_for();
+            while (1);
+            break;
+        case SEMICOLON:
+            std::cout << "NOP!\n";
+            consume(1);
+            break;
+        case LET:
+            std::cout << "LET!\n";
             break;
         default:
             break;
         }
 
+        std::cin.get();
         std::cout << "end statement\n";
         return parse_result(ast_node(INVALID_AST));
     }
 
-    parse_result parse_function() {
+    parse_result parse_funcdecl() {
         token t0 = peek(0);
         token t1 = peek(1);
         token t2 = peek(2);
@@ -353,6 +457,11 @@ public:
         while ((ti = peek(0)).type != CLOSEPAREN) {
             if (ti.type == INVALID_TOKEN) {
                 return parse_result("Unterminated arguments list in function declaration");
+            }
+
+            if (ti.type == COMMA) {
+                consume(1);
+                continue;
             }
 
             if (ti.type != IDENTIFIER) {
@@ -386,6 +495,7 @@ public:
         parse_statement();
 
         std::cout << "end function\n";
+        
         return parse_result(ast_node(INVALID_AST));
     }
 };
