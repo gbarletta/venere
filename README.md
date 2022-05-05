@@ -1,1 +1,1 @@
-Parser for Venere, my experimental language
+Compiler for Venere, my personal programming language
